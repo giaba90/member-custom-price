@@ -44,6 +44,9 @@ require_once(plugin_dir_path( __FILE__ ).'includes/custom-price.php');
             elseif(function_exists('get_field') && get_field('mpc_price_dkk') && get_woocommerce_currency() == 'DKK'){
                  echo '<a rel="nofollow" href="'.get_permalink( wc_get_page_id( 'shop' ) ).'?add-to-cart='.esc_attr($id).'" data-quantity="1" data-product_id="'.esc_attr($id).'"data-product_custom_price="'.get_field('mpc_price_dkk',$id).'" data-product_sku="" class="mpc_shop_button button add_to_cart_button">Member price: '. strip_tags( wc_price( get_field('mpc_price_dkk')) ).'</a>';
             }
+            elseif(function_exists('get_field') && get_field('mpc_price_sek') && get_woocommerce_currency() == 'SEK'){
+                 echo '<a rel="nofollow" href="'.get_permalink( wc_get_page_id( 'shop' ) ).'?add-to-cart='.esc_attr($id).'" data-quantity="1" data-product_id="'.esc_attr($id).'"data-product_custom_price="'.get_field('mpc_price_sek',$id).'" data-product_sku="" class="mpc_shop_button button add_to_cart_button">Member price: '. strip_tags( wc_price( get_field('mpc_price_sek')) ).'</a>';
+            }
 
     }
 }
@@ -62,6 +65,9 @@ function mpc_display_member_price($price_html,$product){
     }
     elseif(function_exists('get_field') && get_field('mpc_price_dkk') && get_woocommerce_currency() == 'DKK'){
         $price_html .= '<p class="mpc-members-price product-page">'. __('Members Price: ','mpc') .wc_price(get_field('mpc_price_dkk')).' </p>' ;
+    }
+    elseif(function_exists('get_field') && get_field('mpc_price_sek') && get_woocommerce_currency() == 'SEK'){
+        $price_html .= '<p class="mpc-members-price product-page">'. __('Members Price: ','mpc') .wc_price(get_field('mpc_price_sek')).' </p>' ;
     }
     return $price_html;
 }
@@ -90,7 +96,7 @@ function mpc_show_content_after_add_to_cart($product_id) {
     $id  = $product_id;
     if(function_exists('get_field') && get_field('mpc_price_euro',$id) && get_woocommerce_currency() == 'EUR' ){
         ?>
-        <div style="display:inline;vertical-align: top;font-size: 26px">|</div><form class="cart" method="post" enctype="multipart/form-data">
+        <div id="mpc-separator">OR</div><form class="cart" method="post" enctype="multipart/form-data">
             <?
             woocommerce_quantity_input( array(
                 'min_value'   => apply_filters( 'woocommerce_quantity_input_min', $product->get_min_purchase_quantity(), $product ),
@@ -106,7 +112,7 @@ function mpc_show_content_after_add_to_cart($product_id) {
     }
     elseif(function_exists('get_field') && get_field('mpc_price_dkk') && get_woocommerce_currency() == 'DKK'){
         ?>
-        <div style="display:inline;vertical-align: top;font-size: 26px">|</div><form class="cart" method="post" enctype="multipart/form-data">
+        <div id="mpc-separator">OR</div><form class="cart" method="post" enctype="multipart/form-data">
             <?
             woocommerce_quantity_input( array(
                 'min_value'   => apply_filters( 'woocommerce_quantity_input_min', $product->get_min_purchase_quantity(), $product ),
@@ -117,6 +123,22 @@ function mpc_show_content_after_add_to_cart($product_id) {
             ?>
             <button type="submit" name="add-to-cart" value="<? echo esc_attr( $product->get_id() ); ?>" class="single_add_to_cart_button button alt mcp_special_price-product-page">
                 <? echo __('Member price: ','mpc').strip_tags( wc_price( get_field('mpc_price_dkk',$id)) ); ?>
+            </button>
+        </form><?php
+    }
+    elseif(function_exists('get_field') && get_field('mpc_price_sek') && get_woocommerce_currency() == 'SEK'){
+        ?>
+        <div id="mpc-separator">OR</div><form class="cart" method="post" enctype="multipart/form-data">
+            <?
+            woocommerce_quantity_input( array(
+                'min_value'   => apply_filters( 'woocommerce_quantity_input_min', $product->get_min_purchase_quantity(), $product ),
+                'max_value'   => apply_filters( 'woocommerce_quantity_input_max', $product->get_max_purchase_quantity(), $product ),
+                'input_value' => isset( $_POST['quantity'] ) ? wc_stock_amount( $_POST['quantity'] ) : $product->get_min_purchase_quantity(),
+            ) );
+            echo '<input type="hidden" name="custom_price" value="'.get_field('mpc_price_sek',$id).'" />';
+            ?>
+            <button type="submit" name="add-to-cart" value="<? echo esc_attr( $product->get_id() ); ?>" class="single_add_to_cart_button button alt mcp_special_price-product-page">
+                <? echo __('Member price: ','mpc').strip_tags( wc_price( get_field('mpc_price_sek',$id)) ); ?>
             </button>
         </form><?php
     }
@@ -174,6 +196,9 @@ function mpc_check_role(){
             elseif(function_exists('get_field') && get_field('mpc_price_dkk',$value['data']->get_id()) && get_woocommerce_currency() == 'DKK'){
                 $price = get_field('mpc_price_dkk', $value['data']->get_id() );
             }
+            elseif(function_exists('get_field') && get_field('mpc_price_sek',$value['data']->get_id()) && get_woocommerce_currency() == 'SEK'){
+                $price = get_field('mpc_price_sek', $value['data']->get_id() );
+            }
 
             ($price) ? $value['data']->set_price( floatval( $price) ) : $value['data']->set_price( floatval( $value['data']->get_price() ) ) ;
         }
@@ -190,4 +215,27 @@ function mpc_check_role(){
 function mpc_get_user_role( $user = null ) {
     $user = $user ? new WP_User( $user ) : wp_get_current_user();
     return $user->roles ? $user->roles[0] : false;
+}
+
+add_action('admin_head', 'my_custom_css');
+
+function my_custom_css(){
+        ?>
+
+        <style type="text/css">
+            p.form-field._sale_price_field {
+                display: none;
+            }
+
+            .currency_blck:first-of-type p:nth-child(3){
+                display:none;
+            }
+
+            .currency_blck:nth-of-type(2) p:nth-child(3){
+                display:none;
+            }
+
+        </style>
+
+        <?
 }
