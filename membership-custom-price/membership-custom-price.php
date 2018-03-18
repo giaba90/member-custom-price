@@ -227,12 +227,16 @@ function my_custom_css(){
                 display: none;
             }
 
-            .currency_blck:first-of-type p:nth-child(3){
+   /*         .currency_blck:first-of-type p:nth-child(4){
                 display:none;
             }
 
-            .currency_blck:nth-of-type(2) p:nth-child(3){
+            .currency_blck:nth-of-type(2) p:nth-child(4){
                 display:none;
+            }
+*/
+            p[class^='_custom_sale_price'], p[class*=' _custom_sale_price']{
+                display: none;
             }
 
         </style>
