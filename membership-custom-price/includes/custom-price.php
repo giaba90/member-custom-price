@@ -62,13 +62,15 @@ add_filter('woocommerce_cart_item_price','mpc_modify_cart_product_price',90,3);
 
 function mpc_modify_cart_product_price( $price, $cart_item, $cart_item_key){
     $id = $cart_item['product_id'];
-    if( isset($cart_item['custom_price']) && get_woocommerce_currency() == 'DKK' && get_field('mpc_price_dkk',$id) ){
+    $my_current_lang = apply_filters( 'wpml_current_language', NULL );
+
+    if( isset($cart_item['custom_price']) && $my_current_lang == 'da' && get_field('mpc_price_dkk',$id) ){
         $price = wc_price( get_field('mpc_price_dkk',$id));
     }
-    elseif ( isset($cart_item['custom_price']) && get_woocommerce_currency() == 'EUR' && get_field('mpc_price_euro',$id) ) {
+    elseif ( isset($cart_item['custom_price']) && $my_current_lang == 'en' && get_field('mpc_price_euro',$id) ) {
         $price = wc_price( get_field('mpc_price_euro',$id));
     }
-    elseif ( isset($cart_item['custom_price']) && get_woocommerce_currency() == 'SEK' && get_field('mpc_price_sek',$id) ) {
+    elseif ( isset($cart_item['custom_price']) && $my_current_lang == 'sv' && get_field('mpc_price_sek',$id) ) {
         $price = wc_price( get_field('mpc_price_sek',$id));
     }
 
@@ -103,15 +105,18 @@ function mpc_apply_custom_price_to_cart_item( $cart_object ) {
 add_action('woocommerce_before_calculate_totals','mpc_check_role',21);
 
 function mpc_check_role(){
+    $my_current_lang = apply_filters( 'wpml_current_language', NULL );
     if(( is_cart() || is_checkout() ) && mpc_get_user_role() == member_role){
         foreach ( WC()->cart->get_cart() as $key => $value ) {
-            if(function_exists('get_field') && get_field('mpc_price_euro',$value['data']->get_id()) && get_woocommerce_currency() == 'EUR' ){
+
+            if(function_exists('get_field') && get_field('mpc_price_euro',$value['product_id']) && $my_current_lang == 'en' ){
                 $price = get_field('mpc_price_euro', $value['data']->get_id() );
             }
-            elseif(function_exists('get_field') && get_field('mpc_price_dkk',$value['data']->get_id()) && get_woocommerce_currency() == 'DKK'){
-                $price = get_field('mpc_price_dkk', $value['data']->get_id() );
+            elseif(function_exists('get_field') && get_field('mpc_price_dkk',$value['product_id']) && $my_current_lang == 'da'){
+               $price = get_field('mpc_price_dkk', $value['product_id'] );
+            //        $price = intval($value['custom_price']);
             }
-            elseif(function_exists('get_field') && get_field('mpc_price_sek',$value['data']->get_id()) && get_woocommerce_currency() == 'SEK'){
+            elseif(function_exists('get_field') && get_field('mpc_price_sek',$value['product_id']) && $my_current_lang == 'sv'){
                 $price = get_field('mpc_price_sek', $value['data']->get_id() );
             }
 
@@ -120,8 +125,12 @@ function mpc_check_role(){
     }
     elseif (is_checkout() && mpc_get_user_role() != member_role ) {
         foreach ( WC()->cart->get_cart() as $key => $value ) {
-            $value['data']->set_price( $value['data']->get_regular_price() ) ;
-
+            if( $value['data']->is_type('simple') ){
+                $value['data']->set_price( $value['data']->get_regular_price() ) ;
+            }else{
+                $value['data']->set_price( $value['data']->get_regular_price() );
+              //  var_dump($value['data']->get_regular_price());
+            }
         }
     }
 }
@@ -129,6 +138,7 @@ function mpc_check_role(){
 // change price in cart based on special formula
 add_filter( 'woocommerce_cart_item_subtotal', 'change_cart_item_subtotal', 10, 3 );
 function change_cart_item_subtotal( $subtotal, $cart_item, $cart_item_key ) {
+ if(( is_cart() && mpc_get_user_role() != member_role )  || ( ( is_cart() || is_checkout() ) && mpc_get_user_role() == member_role ) ){
     $q = $cart_item['quantity'];
  //   var_dump($cart_item);
     if ( ( $q > 2 ) && ( isset( $cart_item['custom_price'] ) ) ) {
@@ -139,18 +149,16 @@ function change_cart_item_subtotal( $subtotal, $cart_item, $cart_item_key ) {
        // $subtotal = '<span class="woocommerce-Price-amount amount">'. sprintf("%.2f", $price) . '<span class="woocommerce-Price-currencySymbol">'. get_woocommerce_currency(). '</span></span>';
         $subtotal = wc_price($price);
     }
-
+}
     return $subtotal;
 }
 //woocommerce_after_calculate_totals
-add_action( 'woocommerce_before_calculate_totals', 'action_cart_calculate_totals', 30, 0 );
+add_action( 'woocommerce_after_calculate_totals', 'action_cart_calculate_totals', 30, 0 );
 function action_cart_calculate_totals() {
     if ( is_admin() && ! defined( 'DOING_AJAX' ) )
         return;
 
-  //  WC()->cart->subtotal_ex_tax = 0;
-  //  WC()->cart->total = 0;
-
+if(( is_cart() && mpc_get_user_role() != member_role )  || ( ( is_cart() || is_checkout() ) && mpc_get_user_role() == member_role ) ){
     foreach ( WC()->cart->get_cart() as $cart_item_key => $cart_item ) {
         $q = $cart_item['quantity'];
         if ( ( $q > 2 ) && ( isset( $cart_item['custom_price'] ) ) ){
@@ -163,6 +171,9 @@ function action_cart_calculate_totals() {
     }
 
   }
+
+}
+
 }
 
 
